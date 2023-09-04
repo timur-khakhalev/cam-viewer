@@ -1,0 +1,6 @@
+{
+  "name": "cam-viewer-server",
+  "script": "npm",
+  "args" : "start",
+  "time": true
+}

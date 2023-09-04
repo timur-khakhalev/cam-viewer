@@ -1,0 +1,43 @@
+.build.web-app:
+  stage: build
+  image: node:20
+  script:
+    - cd web-app
+    - echo "${ENV}" > "./.env"
+    - npm install
+    - npm run generate
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - ./web-app/dist
+
+.deploy.web-app:
+  stage: deploy
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  script:
+    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - aws s3 sync "${ARTIFACTS_PATH}" s3://"${S3_BUCKET}" --endpoint-url "${AWS_ENDPOINT_URL}" --delete --cache-control max-age=31536000
+
+build.web-app:
+  extends: .build.web-app
+  #only:
+    #refs:
+    #  - develop-ci
+    #changes:
+    #  - web-app/**/*
+  variables:
+    ENV: ${WEB_APP_ENV_VARS}
+
+deploy.web-app:
+  extends: .deploy.web-app
+  needs:
+    - build.web-app
+  #only:
+   # refs:
+    #  - develop-ci
+    #changes:
+    #  - web-app/**/*
+  variables:
+    ARTIFACTS_PATH: ./web-app/dist
+    S3_BUCKET: ""

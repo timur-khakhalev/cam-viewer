@@ -1,0 +1,3 @@
+include:
+  - cicd/server.yml
+  - cicd/web-app.yml

@@ -1,0 +1,24 @@
+.deploy.server:
+  stage: deploy
+  image: alpine
+  script:
+    - apk update && apk upgrade
+    - apk add openssh bash rsync
+    - mkdir "${HOME}/.ssh"
+    - ssh-keyscan -H ${API_IP} >> "${HOME}/.ssh/known_hosts"
+    - echo "${SSH_KEY}" > "${HOME}/.ssh/id_rsa"
+    - chmod 700 "${HOME}/.ssh/id_rsa"
+    - echo "${ENV}" > "./server/.env"
+    - rsync -az --exclude ./.git --chmod=755 --delete ./server ""@${API_IP}:${HOST_PROJECT_DIR}
+    - ssh ""@${API_IP} "bash -l -c \"
+      cd ${HOST_PROJECT_DIR}/server;
+      npm install;
+      pm2 restart pm2.json\""
+
+deploy.server:
+  extends: .deploy.server
+  variables:
+    HOST_PROJECT_DIR: /var/www/cam-viewer
+    API_IP: ""
+    SSH_KEY: ${SSH_KEY}
+    ENV: ${SERVER_ENV_VAR}
